@@ -30,10 +30,12 @@ static void strip_token_plaintext(char * input, char * output);
 
 #pragma mark ======== PHP macros ========
 
-static function_entry ectoken_functions[] = {
-    PHP_FE(ectoken_generate, NULL)
-    {NULL, NULL, NULL}
+static zend_function_entry ectoken_functions[] = {
+	PHP_FE(ectoken_generate, NULL)
+	{NULL, NULL, NULL}
 };
+
+#pragma mark ======== PHP macros ========
 
 zend_module_entry ectoken_module_entry = {
 #if ZEND_MODULE_API_NO >= 20010901
