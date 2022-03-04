@@ -1,0 +1,43 @@
+name: gitleaks
+
+on: [pull_request]
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: What is this job and how do I fix it?
+        run: |
+          echo "See this Confluence page https://wiki.tenkasu.net/display/EN/How+To%3A+Use+Gitleaks+to+prevent+secrets+leakage+in+Github for more info"
+      - name: Copy external config to workspace
+        env:
+          TOKEN: ${{ secrets.GITLEAKS_GITHUB_TOKEN }}
+        run: |
+          mkdir gitleaks-config-tmp && cd gitleaks-config-tmp
+          `git clone https://${TOKEN}:x-oauth-basic@github.com/crunchyroll/gitleaks-config.git`
+          cp gitleaks-config/external-config/.gitleaks.toml ../.
+          cd ..
+          ls -al
+      - id: gitleaks-action
+        name: gitleaks-action
+        uses: crunchyroll/gitleaks-action@master
+        with:
+          extra-args: --config-path=.gitleaks.toml --report=gitleaks.json
+      - name: slack-notify-action
+        if: ${{steps.gitleaks-action.outputs.exitcode == 1}}
+        uses: rtCamp/action-slack-notify@master
+        env:
+          SLACK_MESSAGE: "This PR failed the Gitleaks Scan: \
+            ${{github.event.pull_request.html_url}}"
+          SLACK_FOOTER: ""
+          SLACK_TITLE: "${{github.event.pull_request.title}}"
+          SLACK_WEBHOOK: "${{secrets.sct_slack_webhook}}"
+          MSG_MINIMAL: true
+          SLACK_USERNAME: "Gitleaks Alert"
+          SLACK_ICON: "https://placekitten.com/32/32"
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: gitleaks
+          path: gitleaks.json
